@@ -10,7 +10,16 @@ import io
 from ocr_comparison import DocumentComparator
 
 app = Flask(__name__)
-CORS(app)  
+
+# CORS konfigürasyonu - sadece gerekli originlere izin ver
+CORS(app, origins=[
+    "http://localhost:3000",
+    "http://localhost:8080", 
+    "https://edevlet-belge-dogrulama-api-841992261399.europe-west1.run.app",
+    "https://*.vercel.app",    # Vercel deployment için
+    "https://*.netlify.app"    # Netlify deployment için
+], methods=['GET', 'POST'], allow_headers=['Content-Type', 'Authorization'])
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 UPLOAD_FOLDER = 'temp_uploads'
