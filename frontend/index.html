@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Belge Doğrulama API Test Arayüzü</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        opacity: 0.8;
+        font-size: 1.1em;
+      }
+
+      .main-content {
+        padding: 30px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+        padding: 25px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        background: #fafafa;
+      }
+
+      .section h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+
+      .endpoint-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .endpoint-card {
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .endpoint-card:hover {
+        border-color: #3498db;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+      }
+
+      .endpoint-card.selected {
+        border-color: #27ae60;
+        background: #f8fff8;
+      }
+
+      .endpoint-card h3 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1.2em;
+      }
+
+      .endpoint-card .method {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .method.post {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .method.get {
+        background: #27ae60;
+        color: white;
+      }
+
+      .endpoint-card .description {
+        color: #666;
+        font-size: 0.9em;
+        line-height: 1.4;
+      }
+
+      .drag-drop-area {
+        border: 3px dashed #3498db;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .drag-drop-area:hover {
+        border-color: #2980b9;
+        background: #e8f4fd;
+      }
+
+      .drag-drop-area.dragover {
+        border-color: #27ae60;
+        background: #e8f5e8;
+        transform: scale(1.02);
+      }
+
+      .drag-drop-area .icon {
+        font-size: 3em;
+        color: #3498db;
+        margin-bottom: 15px;
+      }
+
+      .drag-drop-area h3 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+
+      .drag-drop-area p {
+        color: #666;
+        margin-bottom: 15px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .file-info {
+        margin-top: 15px;
+        padding: 15px;
+        background: #e8f5e8;
+        border-radius: 5px;
+        border-left: 4px solid #27ae60;
+      }
+
+      .file-info h4 {
+        color: #27ae60;
+        margin-bottom: 5px;
+      }
+
+      .file-info p {
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .tc-input-group {
+        margin-top: 20px;
+      }
+
+      .tc-input-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: bold;
+      }
+
+      .tc-input-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+        transition: border-color 0.3s ease;
+      }
+
+      .tc-input-group input:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+        width: 100%;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+      }
+
+      .btn:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .response-section {
+        margin-top: 30px;
+      }
+
+      .response-container {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        max-height: 500px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #3498db;
+      }
+
+      .loading .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #e74c3c;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+      }
+
+      .success {
+        background: #27ae60;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+      }
+
+      .pdf-viewer {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .pdf-viewer iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 768px) {
+        .endpoint-selector {
+          grid-template-columns: 1fr;
+        }
+
+        .main-content {
+          padding: 20px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔍 Belge Doğrulama API</h1>
+        <p>Backend endpoint'lerini test etmek için dosyalarınızı yükleyin</p>
+      </div>
+
+      <div class="main-content">
+        <div class="section">
+          <h2>📋 Endpoint Seçimi</h2>
+          <div class="endpoint-selector">
+            <div class="endpoint-card" data-endpoint="health">
+              <div class="method get">GET</div>
+              <h3>/health</h3>
+              <div class="description">
+                API sağlık kontrolü - dosya yükleme gerektirmez
+              </div>
+            </div>
+
+            <div class="endpoint-card" data-endpoint="upload">
+              <div class="method post">POST</div>
+              <h3>/upload</h3>
+              <div class="description">
+                Dosya yükleme - PDF, PNG, JPG destekler
+              </div>
+            </div>
+
+            <div class="endpoint-card" data-endpoint="verify-direct">
+              <div class="method post">POST</div>
+              <h3>/verify-direct</h3>
+              <div class="description">Direkt dosya yükleme ve doğrulama</div>
+            </div>
+
+            <div class="endpoint-card" data-endpoint="verify-with-tc">
+              <div class="method post">POST</div>
+              <h3>/verify-with-tc</h3>
+              <div class="description">TC kimlik ile belge doğrulama</div>
+            </div>
+
+            <div class="endpoint-card" data-endpoint="verify-compare">
+              <div class="method post">POST</div>
+              <h3>/verify-compare</h3>
+              <div class="description">Belge doğrulama + OCR karşılaştırma</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="file-upload-section">
+          <h2>📁 Dosya Yükleme</h2>
+          <div class="drag-drop-area" id="drag-drop-area">
+            <div class="icon">📄</div>
+            <h3>Dosyalarınızı buraya sürükleyin</h3>
+            <p>veya dosya seçmek için tıklayın</p>
+            <p><strong>Desteklenen formatlar:</strong> PDF, PNG, JPG, JPEG</p>
+            <input
+              type="file"
+              id="file-input"
+              class="file-input"
+              accept=".pdf,.png,.jpg,.jpeg"
+              multiple
+            />
+          </div>
+          <div id="file-info" class="file-info hidden">
+            <h4>✅ Dosya Seçildi</h4>
+            <p id="file-details"></p>
+          </div>
+        </div>
+
+        <div class="section hidden" id="tc-input-section">
+          <h2>🆔 TC Kimlik Numarası</h2>
+          <div class="tc-input-group">
+            <label for="tc-input">TC Kimlik Numarası:</label>
+            <input
+              type="text"
+              id="tc-input"
+              placeholder="11 haneli TC kimlik numaranızı girin"
+              maxlength="11"
+            />
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🌐 API URL</h2>
+          <div class="tc-input-group">
+            <label for="api-url">Backend URL:</label>
+            <input
+              type="text"
+              id="api-url"
+              value="https://edevlet-belge-dogrulama-api-841992261399.europe-west1.run.app"
+              placeholder="https://edevlet-belge-dogrulama-api-841992261399.europe-west1.run.app"
+            />
+          </div>
+        </div>
+
+        <button class="btn" id="send-btn" disabled>🚀 İsteği Gönder</button>
+
+        <div class="response-section">
+          <h2>📤 Yanıt</h2>
+          <div id="response-container" class="response-container hidden">
+            <div class="loading hidden" id="loading">
+              <div class="spinner"></div>
+              <p>İstek gönderiliyor...</p>
+            </div>
+            <div id="response-content"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class APITester {
+        constructor() {
+          this.selectedEndpoint = null;
+          this.selectedFiles = [];
+          this.init();
+        }
+
+        init() {
+          this.setupEventListeners();
+          this.updateUI();
+        }
+
+        setupEventListeners() {
+          document.querySelectorAll('.endpoint-card').forEach((card) => {
+            card.addEventListener('click', () => {
+              this.selectEndpoint(card.dataset.endpoint);
+            });
+          });
+
+          const dragDropArea = document.getElementById('drag-drop-area');
+          const fileInput = document.getElementById('file-input');
+
+          dragDropArea.addEventListener('click', () => fileInput.click());
+          fileInput.addEventListener('change', (e) =>
+            this.handleFileSelect(e.target.files)
+          );
+
+          dragDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.add('dragover');
+          });
+
+          dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.classList.remove('dragover');
+          });
+
+          dragDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.remove('dragover');
+            this.handleFileSelect(e.dataTransfer.files);
+          });
+
+          document.getElementById('tc-input').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+            this.updateUI();
+          });
+
+          document.getElementById('send-btn').addEventListener('click', () => {
+            this.sendRequest();
+          });
+        }
+
+        selectEndpoint(endpoint) {
+          this.selectedEndpoint = endpoint;
+
+          document.querySelectorAll('.endpoint-card').forEach((card) => {
+            card.classList.remove('selected');
+          });
+
+          document
+            .querySelector(`[data-endpoint="${endpoint}"]`)
+            .classList.add('selected');
+
+          this.updateUI();
+        }
+
+        handleFileSelect(files) {
+          this.selectedFiles = Array.from(files).filter((file) => {
+            const allowedTypes = [
+              'application/pdf',
+              'image/png',
+              'image/jpeg',
+              'image/jpg',
+            ];
+            return allowedTypes.includes(file.type);
+          });
+
+          this.updateFileInfo();
+          this.updateUI();
+        }
+
+        updateFileInfo() {
+          const fileInfo = document.getElementById('file-info');
+          const fileDetails = document.getElementById('file-details');
+
+          if (this.selectedFiles.length === 0) {
+            fileInfo.classList.add('hidden');
+            return;
+          }
+
+          fileInfo.classList.remove('hidden');
+
+          const fileList = this.selectedFiles
+            .map((file) => `• ${file.name} (${this.formatFileSize(file.size)})`)
+            .join('<br>');
+
+          fileDetails.innerHTML = fileList;
+        }
+
+        formatFileSize(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return (
+            parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+          );
+        }
+
+        updateUI() {
+          const sendBtn = document.getElementById('send-btn');
+          const fileUploadSection = document.getElementById(
+            'file-upload-section'
+          );
+          const tcInputSection = document.getElementById('tc-input-section');
+          const tcInput = document.getElementById('tc-input');
+
+          if (this.selectedEndpoint === 'health') {
+            fileUploadSection.classList.add('hidden');
+            tcInputSection.classList.add('hidden');
+            sendBtn.disabled = false;
+            return;
+          }
+
+          fileUploadSection.classList.remove('hidden');
+
+          if (this.selectedEndpoint === 'verify-with-tc') {
+            tcInputSection.classList.remove('hidden');
+            sendBtn.disabled = !(
+              this.selectedFiles.length > 0 && tcInput.value.length === 11
+            );
+          } else {
+            tcInputSection.classList.add('hidden');
+            sendBtn.disabled = this.selectedFiles.length === 0;
+          }
+        }
+
+        async sendRequest() {
+          const apiUrl = document.getElementById('api-url').value;
+          const responseContainer =
+            document.getElementById('response-container');
+          const loading = document.getElementById('loading');
+          const responseContent = document.getElementById('response-content');
+
+          responseContainer.classList.remove('hidden');
+          loading.classList.remove('hidden');
+          responseContent.innerHTML = '';
+
+          try {
+            let response;
+
+            switch (this.selectedEndpoint) {
+              case 'health':
+                response = await this.sendHealthRequest(apiUrl);
+                break;
+              case 'upload':
+                response = await this.sendUploadRequest(apiUrl);
+                break;
+              case 'verify-direct':
+                response = await this.sendVerifyDirectRequest(apiUrl);
+                break;
+              case 'verify-with-tc':
+                response = await this.sendVerifyWithTcRequest(apiUrl);
+                break;
+              case 'verify-compare':
+                response = await this.sendVerifyCompareRequest(apiUrl);
+                break;
+              default:
+                throw new Error('Geçersiz endpoint');
+            }
+
+            this.displayResponse(response);
+          } catch (error) {
+            this.displayError(error);
+          } finally {
+            loading.classList.add('hidden');
+          }
+        }
+
+        async sendHealthRequest(apiUrl) {
+          const response = await fetch(`${apiUrl}/health`);
+          return await response.json();
+        }
+
+        async sendUploadRequest(apiUrl) {
+          const formData = new FormData();
+          this.selectedFiles.forEach((file) => {
+            formData.append('file', file);
+          });
+
+          const response = await fetch(`${apiUrl}/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          return await response.json();
+        }
+
+        async sendVerifyDirectRequest(apiUrl) {
+          const formData = new FormData();
+          formData.append('file', this.selectedFiles[0]);
+
+          const response = await fetch(`${apiUrl}/verify-direct`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          return await response.json();
+        }
+
+        async sendVerifyWithTcRequest(apiUrl) {
+          const formData = new FormData();
+          formData.append('file', this.selectedFiles[0]);
+
+          const response = await fetch(`${apiUrl}/verify-with-tc`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'TC-Kimlik': document.getElementById('tc-input').value,
+            },
+          });
+
+          return await response.json();
+        }
+
+        async sendVerifyCompareRequest(apiUrl) {
+          const formData = new FormData();
+          formData.append('file', this.selectedFiles[0]);
+
+          const response = await fetch(`${apiUrl}/verify-compare`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          return await response.json();
+        }
+
+        displayResponse(data) {
+          const responseContent = document.getElementById('response-content');
+
+          let html = `<div class="success">✅ İstek başarılı!</div>`;
+          html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+          if (data.verified_pdf_base64) {
+            html += `<div class="pdf-viewer">
+                        <h3>📄 Doğrulanmış PDF:</h3>
+                        <iframe src="data:application/pdf;base64,${data.verified_pdf_base64}"></iframe>
+                    </div>`;
+          }
+
+          responseContent.innerHTML = html;
+        }
+
+        displayError(error) {
+          const responseContent = document.getElementById('response-content');
+          responseContent.innerHTML = `
+                    <div class="error">❌ Hata: ${error.message}</div>
+                    <pre>${error.stack || error.message}</pre>
+                `;
+        }
+      }
+
+      new APITester();
+    </script>
+  </body>
+</html>
