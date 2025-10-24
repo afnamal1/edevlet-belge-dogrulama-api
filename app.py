@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import tempfile
@@ -9,6 +10,7 @@ import io
 from ocr_comparison import DocumentComparator
 
 app = Flask(__name__)
+CORS(app)  
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 UPLOAD_FOLDER = 'temp_uploads'
