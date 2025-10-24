@@ -6,16 +6,18 @@ import uuid
 from eDevlet import getQRdata, getFileBarkod, checkValid, getQRdataImg
 import base64
 import io
+from ocr_comparison import DocumentComparator
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Geçici dosyalar için klasör
 UPLOAD_FOLDER = 'temp_uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+
+comparator = DocumentComparator()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -44,7 +46,6 @@ def upload_file():
         unique_filename = f"{uuid.uuid4()}_{filename}"
         filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
         
-        # Dosyayı kaydet
         file.save(filepath)
         
         return jsonify({
@@ -277,6 +278,85 @@ def download_file(file_id):
         
     except Exception as e:
         return jsonify({"error": f"İndirme hatası: {str(e)}"}), 500
+
+
+@app.route('/verify-compare', methods=['POST'])
+def verify_compare():
+    """Belgeyi doğrula ve OCR ile karşılaştır (tek adımda)"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "Dosya bulunamadı"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Dosya seçilmedi"}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({"error": "Desteklenmeyen dosya formatı"}), 400
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.filename.split('.')[-1]}") as temp_file:
+            file.save(temp_file.name)
+            temp_filepath = temp_file.name
+        
+        try:
+            file_ext = file.filename.split('.')[-1].lower()
+            
+            if file_ext == 'pdf':
+                qr_data = getQRdata(temp_filepath)
+            elif file_ext in ['png', 'jpg', 'jpeg']:
+                qr_data = getQRdataImg(temp_filepath)
+            else:
+                return jsonify({"error": "Desteklenmeyen dosya formatı"}), 400
+            
+            barkod = qr_data["barkod"]
+            tc = qr_data["tckn"]
+            
+            is_valid = checkValid(barkod, tc)
+            
+            result = {
+                "filename": file.filename,
+                "barkod": barkod,
+                "tc_kimlik": tc,
+                "is_valid": is_valid,
+                "message": "Belge doğrulandı" if is_valid else "Belge doğrulanamadı"
+            }
+            
+            if is_valid:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as verified_temp:
+                    verified_filepath = verified_temp.name
+                
+                getFileBarkod(barkod, tc, verified_filepath)
+                
+                verified_pdf_path = verified_filepath + ".pdf"
+                with open(verified_pdf_path, 'rb') as f:
+                    pdf_data = f.read()
+                    pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
+                
+                result["verified_pdf_base64"] = pdf_base64
+                
+                comparison_result = comparator.compare_documents(temp_filepath, pdf_base64, file_ext)
+                result["ocr_comparison"] = comparison_result
+                
+                os.remove(verified_pdf_path)
+            else:
+                result["ocr_comparison"] = {
+                    "error": "Belge doğrulanamadığı için OCR karşılaştırması yapılamadı",
+                    "similarity_score": 0.0,
+                    "similarity_percentage": 0.0,
+                    "is_similar": False,
+                    "comparison_status": "BELGE GEÇERSİZ"
+                }
+            
+            return jsonify(result), 200
+            
+        finally:
+            # Geçici dosyayı sil
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+        
+    except Exception as e:
+        return jsonify({"error": f"Doğrulama ve karşılaştırma hatası: {str(e)}"}), 500
+
 
 @app.errorhandler(413)
 def too_large(e):
